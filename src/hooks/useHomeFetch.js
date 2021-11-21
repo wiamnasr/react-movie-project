@@ -1,8 +1,11 @@
-// REact wants you to name all your custom hooks with "use"+"NAME"
-import { useState, useEffect, useRef } from "react";
+// React wants you to name all your custom hooks with "use"+"NAME"
+import { useState, useEffect } from "react";
 
 // API
 import API from "../API";
+
+// Helpers
+import { isPersistedState } from "../helpers";
 
 // Always a great idea to have an initial state if you want to reset stuff
 const initialState = {
@@ -65,7 +68,30 @@ export const useHomeFetch = () => {
   //   sending in 1 because I want to fetch the first page
   // added searchTerm in the dependency array, meaning that this useEffect will trigger each time the search term changes
   //  it will also trigger one time on mount (can be used for initial fetching also as for the initial fetching, the searchTerm will be an empty string)
+
+  // Search and initial
   useEffect(() => {
+    // In the useEffect, checking if there is a sessionState, before retrieving anything from the API
+    // Couple of things to consider: checking sessionStorage on the initial render, before we fetch anything from the API
+    // If we have something in the sessionStorage, we retrieve that one instead
+    // Later will create a hook that writes to the session storage, will not write to sessionStorage if we are in the search (nor retrieve anything in this case)
+    // for that creating an if statement here:
+    if (!searchTerm) {
+      // hard coding a string for the homepage state called homeState
+      // homestate is the property that will write to the sessionStorage
+      const sessionState = isPersistedState("homeState");
+
+      // nesting an if statement to check if there s anything in sessionState and then setting the state, giving it sessionState
+      if (sessionState) {
+        console.log("Grabbing from sessionStorage");
+        setState(sessionState);
+        // returning not to do anything else, otherwise it will end up fetching from the API also
+        return;
+      }
+    }
+
+    console.log("Grabbing from API");
+
     // wipe out the old state before making a new search setState(initial)
     setState(initialState);
     fetchMovies(1, searchTerm);
@@ -78,6 +104,17 @@ export const useHomeFetch = () => {
     fetchMovies(state.page + 1, searchTerm);
     setIsLoadingMore(false);
   }, [isLoadingMore, searchTerm, state.page]);
+
+  // Write to sessionStorage
+  // with a dependency array, is going to write to the sessionStorage when the search term changes and also when state changes
+  useEffect(() => {
+    // if we are in a searchTerm, we don't want to write to sessionStorage (not to have the last active search on the homepage)
+    // if we want to store in local storage, we simply change the sessionStorage to localStorage here as well
+    // important to have the name homeState as above as its a hard-coded string
+    // second argument is what we want to write to the state (we can only write a string to the session and local storage) => stingify with JSON!
+    // These are called the linting rules for hooks included with create React app
+    if (!searchTerm) sessionStorage.setItem("homeState", JSON.stringify(state));
+  }, [searchTerm, state]);
 
   return { state, loading, error, searchTerm, setSearchTerm, setIsLoadingMore };
 };

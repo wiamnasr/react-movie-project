@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 
 import API from "../API";
 
+// Helpers
+import { isPersistedState } from "../helpers";
+
 // crating the hook
 export const useMovieFetch = (movieId) => {
   // creating 3 states, the state and the setter
@@ -52,8 +55,29 @@ export const useMovieFetch = (movieId) => {
       }
     };
 
+    // Storing each individual movie in  the sessionStorage
+    // this will give us NULL or the actual state
+    const sessionState = isPersistedState(movieId);
+
+    if (sessionState) {
+      setState(sessionState);
+      // because I'm setting it to true when we start, now we need to setting it to false, otherwise it will keep showing the spinner
+      setLoading(false);
+      // Early return otherwise it will run the function that fetched the movie from the API
+      return;
+    }
+
     fetchMovie();
   }, [movieId]);
+
+  // Write to sessionStorage (creating useEffect for writing to sessionStorage)
+  //  it will change on movieId change and state change (dependency array) => these actually will not change as we are grabbing the data once for each movie
+  // Nevertheless we should always specify all the dependencies for each useEffect
+  // If something doesn't work, it gets handled in the useEffect, this way errors are easily handled and detected in the app
+  useEffect(() => {
+    sessionStorage.setItem(movieId, JSON.stringify(state));
+  }, [movieId, state]);
+
   // returning an object with a state, loading and error from our hook
   return { state, loading, error };
 };

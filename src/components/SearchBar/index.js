@@ -4,6 +4,7 @@
 // The useEffect is used to trigger when this local state changes, then will update the search term, so that it will fetch new movies from the API
 // useRef is used to show a trick that can be used if we don't want to do something in the useEffect on the initial render
 import React, { useState, useEffect, useRef } from "react";
+import PropTypes from "prop-types";
 
 // Image
 import searchIcon from "../../images/search-icon.svg";
@@ -40,6 +41,10 @@ const SearchBar = ({ setSearchTerm }) => {
       </Content>
     </Wrapper>
   );
+};
+
+SearchBar.propTypes = {
+  callback: PropTypes.func,
 };
 
 export default SearchBar;
